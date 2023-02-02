@@ -11,7 +11,7 @@
 [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
 [![Code Style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 
-_A collection of scripts used to process imagery_
+_A collection of scripts used to process aerial imagery_
 
 # Package
 
