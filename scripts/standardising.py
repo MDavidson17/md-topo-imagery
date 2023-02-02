@@ -15,7 +15,7 @@ from scripts.files.files_helper import get_file_name_from_path, is_tiff, is_vrt
 from scripts.files.fs import read, write
 from scripts.gdal.gdal_bands import get_gdal_band_offset
 from scripts.gdal.gdal_helper import get_gdal_version, run_gdal
-from scripts.gdal.gdal_preset import get_cutline_command, get_gdal_command
+from scripts.gdal.gdal_preset import get_alpha_command, get_cutline_command, get_gdal_command
 from scripts.logging.time_helper import time_in_ms
 
 
@@ -81,6 +81,7 @@ def standardising(file: str, preset: str, cutline: Optional[str]) -> FileTiff:
 
     with tempfile.TemporaryDirectory() as tmp_path:
         input_file = file
+        tiff = FileTiff(file)
 
         # Ensure the remote file can be read locally, having multiple s3 paths with different credentials
         # makes it hard for GDAL to do its thing
@@ -100,12 +101,17 @@ def standardising(file: str, preset: str, cutline: Optional[str]) -> FileTiff:
             run_gdal(get_cutline_command(input_cutline_path), input_file=input_file, output_file=target_vrt)
             input_file = target_vrt
 
+        gdalinfo_original_tiff = tiff.get_gdalinfo_original()
+        if not cutline and gdalinfo_original_tiff and tiff.check_no_data_original(gdalinfo_original_tiff):
+            target_vrt = os.path.join(tmp_path, str(ulid.ULID()) + ".vrt")
+            run_gdal(get_alpha_command(), input_file=input_file, output_file=target_vrt)
+            input_file = target_vrt
+
         command = get_gdal_command(preset)
         command.extend(get_gdal_band_offset(input_file))
 
         run_gdal(command, input_file=input_file, output_file=standardized_file_path)
 
-    tiff = FileTiff(file)
     tiff.set_path_standardised(standardized_file_path)
 
     return tiff
