@@ -25,7 +25,7 @@ jobs:
         if: ${{(github.ref == 'refs/heads/master') && !(startsWith(github.event.head_commit.message, 'release:'))}}
         run: |
           GIT_VERSION=$(git describe --tags --always --match 'v*')
-          docker tag topo-imagery ghcr.io/mdavidson17/topo-imagery:latest
-          docker tag topo-imagery ghcr.io/mdavidson17/topo-imagery:${GIT_VERSION}
+          docker tag topo-imagery ghcr.io/mdavidson17/md-topo-imagery:latest
+          docker tag topo-imagery ghcr.io/mdavidson17/md-topo-imagery:${GIT_VERSION}
 
-          docker push --all-tags ghcr.io/mdavidson17/topo-imagery
+          docker push --all-tags ghcr.io/mdavidson17/md-topo-imagery
