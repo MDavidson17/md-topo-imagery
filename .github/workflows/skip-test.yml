@@ -13,12 +13,12 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    if: "*[skip-workflows]*" == ${{ github.event.head_commit.message }}
 
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-        if: "*[skip-workflows]*" == ${{ github.event.head_commit.message }}
 
       - name: test
         run: |
