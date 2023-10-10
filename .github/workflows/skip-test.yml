@@ -23,6 +23,7 @@ jobs:
       - name: test
         run: |
           echo "${{ github.event.head_commit.message }}"
+          echo "test no run"
 
       # - name: Setup kubectl
       #   uses: azure/setup-kubectl@v3
