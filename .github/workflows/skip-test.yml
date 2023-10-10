@@ -1,11 +1,11 @@
 name: Publish to ODR
 
 on:
-  [push]
-  # branches:
-  #   - master
-  # paths:
-  #   - "publish-odr-parameters/**.yaml"
+  push:
+    branches:
+      - master
+    paths:
+      - "publish-odr-parameters/**.yaml"
 
 jobs:
   main:
