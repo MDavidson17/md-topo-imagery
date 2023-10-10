@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - master
-    paths:
-      - "publish-odr-parameters/**.yaml"
+    # paths:
+    #   - "publish-odr-parameters/**.yaml"
 
 jobs:
   main:
