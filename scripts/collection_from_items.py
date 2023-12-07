@@ -6,19 +6,92 @@ from typing import List
 from boto3 import client
 from linz_logger import get_log
 
-from scripts.cli.cli_helper import coalesce_multi_single
+from scripts.cli.cli_helper import coalesce_multi_single, nullable_str, valid_date
 from scripts.files.fs_s3 import bucket_name_from_path, get_object_parallel_multithreading, list_json_in_uri
 from scripts.logging.time_helper import time_in_ms
 from scripts.stac.imagery.collection import ImageryCollection
+from scripts.stac.imagery.generate_metadata import ElevationSubtypes, ImagerySubtypes, generate_description, generate_title
 from scripts.stac.imagery.provider import Provider, ProviderRole
 
 
+# pylint: disable-msg=too-many-locals
 def main() -> None:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--preset", dest="preset", required=True, help="Standardised file format. Example: webp")
     parser.add_argument("--uri", dest="uri", help="s3 path to items and collection.json write location", required=True)
     parser.add_argument("--collection-id", dest="collection_id", help="Collection ID", required=True)
-    parser.add_argument("--title", dest="title", help="Collection title", required=True)
-    parser.add_argument("--description", dest="description", help="Collection description", required=True)
+    parser.add_argument(
+        "--subtype",
+        dest="subtype",
+        help="Dataset subtype description",
+        required=True,
+        choices=[
+            ImagerySubtypes.AERIAL,
+            ImagerySubtypes.HISTORICAL,
+            ImagerySubtypes.SATELLIE,
+            ImagerySubtypes.URBAN,
+            ImagerySubtypes.RURAL,
+            ElevationSubtypes.DEM,
+            ElevationSubtypes.DSM,
+        ],
+    )
+    parser.add_argument(
+        "--region",
+        dest="region",
+        help="Region of Dataset",
+        required=True,
+        choices=[
+            "antarctica",
+            "auckland",
+            "bay-of-plenty",
+            "canterbury",
+            "gisborne",
+            "global",
+            "hawkes-bay",
+            "manawatu-whanganui",
+            "marlborough",
+            "nelson",
+            "new-zealand",
+            "northland",
+            "otago",
+            "pacific-islands",
+            "southland",
+            "taranaki",
+            "tasman",
+            "waikato",
+            "wellington",
+            "west-coast",
+        ],
+    )
+    parser.add_argument("--gsd", dest="gsd", help="GSD of imagery Dataset", type=nullable_str, required=True)
+    parser.add_argument(
+        "--location", dest="location", help="Optional Location of dataset, e.g.- Hutt City", type=nullable_str, required=False
+    )
+    parser.add_argument(
+        "--start-date",
+        dest="start_date",
+        help="Start datetime in format YYYY-MM-DD (Inclusive)",
+        type=valid_date,
+        required=True,
+    )
+    parser.add_argument(
+        "--end-date", dest="end_date", help="End datetime in format YYYY-MM-DD (Inclusive)", type=valid_date, required=True
+    )
+    parser.add_argument("--event", dest="dest", help="Event name if applicable", type=nullable_str, required=False)
+    parser.add_argument(
+        "--historic-survey-number",
+        dest="historic_survey_number",
+        help="Historic Survey Number if Applicable. E.g.- SCN8844",
+        type=nullable_str,
+        required=False,
+    )
+    parser.add_argument(
+        "--lifecycle",
+        dest="lifecycle",
+        help="Designating dataset status",
+        required=True,
+        choices=["under development", "preview", "ongoing", "completed", "deprecated"],
+    )
     parser.add_argument(
         "--producer",
         dest="producer",
@@ -44,8 +117,29 @@ def main() -> None:
     for licensor_name in coalesce_multi_single(arguments.licensor_list, arguments.licensor):
         providers.append({"name": licensor_name, "roles": [ProviderRole.LICENSOR]})
 
+    title = generate_title(
+        arguments.subtype,
+        arguments.region,
+        arguments.gsd,
+        arguments.start_date,
+        arguments.end_date,
+        arguments.lifecycle,
+        arguments.location,
+        arguments.event,
+        arguments.historic_survey_number,
+    )
+    description = generate_description(
+        arguments.subtype,
+        arguments.region,
+        arguments.start_date,
+        arguments.end_date,
+        arguments.location,
+        arguments.event,
+        arguments.historic_survey_number,
+    )
+
     collection = ImageryCollection(
-        title=arguments.title, description=arguments.description, collection_id=arguments.collection_id, providers=providers
+        title=title, description=description, collection_id=arguments.collection_id, providers=providers
     )
 
     if not uri.startswith("s3://"):
