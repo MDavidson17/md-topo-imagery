@@ -30,7 +30,7 @@ def main() -> None:
         dest="subtype",
         help="Dataset subtype description",
         required=True,
-        choices=[ImagerySubtypes._member_names_, ElevationSubtypes._member_names_],
+        choices=[type.value for type in ImagerySubtypes] + [type.value for type in ElevationSubtypes],
     )
     parser.add_argument(
         "--region",
