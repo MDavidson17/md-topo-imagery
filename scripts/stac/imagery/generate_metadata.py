@@ -1,4 +1,3 @@
-import string
 from datetime import datetime
 from enum import Enum
 from typing import Optional
@@ -10,7 +9,7 @@ class SubtypeParameterError(Exception):
 
 
 class ImagerySubtypes(str, Enum):
-    SATELLIE = "Satellite Imagery"
+    SATELLITE = "Satellite Imagery"
     URBAN = "Urban Aerial Photos"
     RURAL = "Rural Aerial Photos"
     AERIAL = "Aerial Photos"
@@ -20,6 +19,30 @@ class ImagerySubtypes(str, Enum):
 class ElevationSubtypes(str, Enum):
     DEM = "DEM"
     DSM = "DSM"
+
+
+HUMAN_READABLE_REGIONS = {
+    "antarctica": "Antarctica",
+    "auckland": "Auckland",
+    "bay-of-plenty": "Bay of Plenty",
+    "canterbury": "Canterbury",
+    "gisborne": "Gisborne",
+    "global": "Global",
+    "hawkes-bay": "Hawke's Bay",
+    "manawatu-whanganui": "Manawatū-Whanganui",
+    "marlborough": "Marlborough",
+    "nelson": "Nelson",
+    "new-zealand": "New Zealand",
+    "northland": "Northland",
+    "otago": "Otago",
+    "pacific-islands": "Pacific Islands",
+    "southland": "Southland",
+    "taranaki": "Taranaki",
+    "tasman": "Tasman",
+    "waikato": "Waikato",
+    "wellington": "Wellington",
+    "west-coast": "West Coast",
+}
 
 
 def generate_title(
@@ -57,13 +80,13 @@ def generate_title(
     # pylint: disable-msg=too-many-arguments
 
     date = _format_date_for_metadata(start_datetime, end_datetime)
-    name = _format_name_for_title(_region_map(region), location)
+    name = _format_name_for_title(HUMAN_READABLE_REGIONS[region], location)
     preview = _is_preview(lifecycle)
 
     if historic_survey_number:
         return " ".join(f"{name} {gsd} {historic_survey_number} ({date}) {preview or ''}".split())
 
-    if subtype in [ImagerySubtypes.SATELLIE, ImagerySubtypes.URBAN, ImagerySubtypes.RURAL]:
+    if subtype in [ImagerySubtypes.SATELLITE, ImagerySubtypes.URBAN, ImagerySubtypes.RURAL]:
         return " ".join(f"{name} {gsd} {event or ''} {subtype} ({date}) {preview or ''}".split())
     if subtype in [ElevationSubtypes.DEM, ElevationSubtypes.DSM]:
         return " ".join(
@@ -106,11 +129,11 @@ def generate_description(
     """
     date = _format_date_for_metadata(start_date, end_date)
     location_txt = _format_location_for_elevation_description(location)  # TODO: rename
-    region = _region_map(region)
+    region = HUMAN_READABLE_REGIONS[region]
 
     if historic_survey_number:
         desc = f"Scanned aerial imagery within the {region} region captured in {date}"
-    elif subtype == ImagerySubtypes.SATELLIE:
+    elif subtype == ImagerySubtypes.SATELLITE:
         desc = f"Satellite imagery within the {region} region captured in {date}"
     elif subtype in [ImagerySubtypes.URBAN, ImagerySubtypes.RURAL]:
         desc = f"Orthophotography within the {region} region captured in the {date} flying season"
@@ -156,12 +179,3 @@ def _format_event_for_elevation_title(event: Optional[str]) -> Optional[str]:
     if event:
         return f"- {event}"
     return None
-
-
-def _region_map(region: str) -> str:
-    """Convert region parameters from ascii input to uft-8"""
-    if region == "hawkes-bay":
-        return "Hawke's Bay"
-    if region == "manawatu-whanganui":
-        return "Manawatū-Whanganui"
-    return string.capwords(region.replace("-", " "))

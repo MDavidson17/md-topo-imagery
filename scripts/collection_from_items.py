@@ -6,18 +6,23 @@ from typing import List
 from boto3 import client
 from linz_logger import get_log
 
-from scripts.cli.cli_helper import coalesce_multi_single, nullable_str, valid_date
+from scripts.cli.cli_helper import coalesce_multi_single, valid_date
 from scripts.files.fs_s3 import bucket_name_from_path, get_object_parallel_multithreading, list_json_in_uri
 from scripts.logging.time_helper import time_in_ms
 from scripts.stac.imagery.collection import ImageryCollection
-from scripts.stac.imagery.generate_metadata import ElevationSubtypes, ImagerySubtypes, generate_description, generate_title
+from scripts.stac.imagery.generate_metadata import (
+    HUMAN_READABLE_REGIONS,
+    ElevationSubtypes,
+    ImagerySubtypes,
+    generate_description,
+    generate_title,
+)
 from scripts.stac.imagery.provider import Provider, ProviderRole
 
 
 # pylint: disable-msg=too-many-locals
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--preset", dest="preset", required=True, help="Standardised file format. Example: webp")
     parser.add_argument("--uri", dest="uri", help="s3 path to items and collection.json write location", required=True)
     parser.add_argument("--collection-id", dest="collection_id", help="Collection ID", required=True)
     parser.add_argument(
@@ -25,64 +30,35 @@ def main() -> None:
         dest="subtype",
         help="Dataset subtype description",
         required=True,
-        choices=[
-            ImagerySubtypes.AERIAL,
-            ImagerySubtypes.HISTORICAL,
-            ImagerySubtypes.SATELLIE,
-            ImagerySubtypes.URBAN,
-            ImagerySubtypes.RURAL,
-            ElevationSubtypes.DEM,
-            ElevationSubtypes.DSM,
-        ],
+        choices=[list(ImagerySubtypes), list(ElevationSubtypes)],
     )
     parser.add_argument(
         "--region",
         dest="region",
         help="Region of Dataset",
         required=True,
-        choices=[
-            "antarctica",
-            "auckland",
-            "bay-of-plenty",
-            "canterbury",
-            "gisborne",
-            "global",
-            "hawkes-bay",
-            "manawatu-whanganui",
-            "marlborough",
-            "nelson",
-            "new-zealand",
-            "northland",
-            "otago",
-            "pacific-islands",
-            "southland",
-            "taranaki",
-            "tasman",
-            "waikato",
-            "wellington",
-            "west-coast",
-        ],
+        choices=HUMAN_READABLE_REGIONS.keys(),
     )
-    parser.add_argument("--gsd", dest="gsd", help="GSD of imagery Dataset", type=nullable_str, required=True)
+    parser.add_argument("--gsd", dest="gsd", help="GSD of imagery Dataset", type=str, required=True)
     parser.add_argument(
-        "--location", dest="location", help="Optional Location of dataset, e.g.- Hutt City", type=nullable_str, required=False
+        "--location", dest="location", help="Optional Location of dataset, e.g.- Hutt City", type=str, required=False
     )
     parser.add_argument(
         "--start-date",
         dest="start_date",
-        help="Start datetime in format YYYY-MM-DD (Inclusive)",
+        help="Start date in format YYYY-MM-DD (Inclusive)",
         type=valid_date,
         required=True,
     )
     parser.add_argument(
-        "--end-date", dest="end_date", help="End datetime in format YYYY-MM-DD (Inclusive)", type=valid_date, required=True
+        "--end-date", dest="end_date", help="End date in format YYYY-MM-DD (Inclusive)", type=valid_date, required=True
     )
-    parser.add_argument("--event", dest="dest", help="Event name if applicable", type=nullable_str, required=False)
+    parser.add_argument("--event", dest="dest", help="Event name if applicable", type=str, required=False)
     parser.add_argument(
         "--historic-survey-number",
         dest="historic_survey_number",
         help="Historic Survey Number if Applicable. E.g.- SCN8844",
-        type=nullable_str,
+        type=str,
         required=False,
     )
     parser.add_argument(
